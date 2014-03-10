@@ -1,0 +1,7 @@
+# Initial inventory file, please edit according your enviroment.
+#
+[webservers]
+localhost
+
+[dbservers]
+localhost
