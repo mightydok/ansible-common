@@ -39,5 +39,13 @@
   tags:
       - common
 
+- name: Place .screenrc file to root and remote_user home directory
+  copy: src=.screenrc dest={{ item.folder }}/.screenrc backup=yes owner={{ item.ug }} group={{ item.ug }} mode=0644
+  with_items:
+      - { folder: "~", ug: "root" }
+      - { folder: "/home/{{ ansible_env.SUDO_USER }}", ug: "{{ ansible_env.SUDO_USER }}" }
+  tags:
+      - common
+
 # Include rkhunter tasks
 - include: rkhunter.yml
