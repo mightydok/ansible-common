@@ -54,7 +54,7 @@
   tags:
       - rkhunter
 
-# Run rkhunter database update. Rkhunter return code^
+# Run rkhunter database update. Rkhunter return code:
 # 0 - if nothing was updated
 # 1 - update error
 # 2 - database has updates and was seccesfully updated
