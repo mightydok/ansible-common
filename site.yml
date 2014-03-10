@@ -1,0 +1,10 @@
+---
+# Playbook to configure LAMP servers
+#
+
+- name: Apply common configuration to all servers
+  hosts: all
+  remote_user: doktor
+  sudo: yes
+  roles:
+  - common

@@ -1,0 +1,77 @@
+---
+# Rkhunter tasks 
+# v 0.1
+#
+
+# We need this package for PPA
+- name: Install python-pycurl
+  apt: pkg=python-pycurl state=latest
+  when: ansible_distribution == "Ubuntu"
+  tags:
+      - rkhunter
+
+# Rkhunter 1.3.8 have a bug, more information: https://bugs.launchpad.net/ubuntu/+source/rkhunter/+bug/883324
+- name: Add PPA repository for patched rkhunter
+  apt_repository: repo='ppa:kholler/ppa-backports'
+  when: ansible_distribution == "Ubuntu"
+  tags:
+      - rkhunter
+
+# We configure rkhunter only first time
+- name: Check if rkhunter already installed
+  shell: /usr/bin/test -f /usr/bin/rkhunter
+  register: whereis_rkhunter
+  failed_when: whereis_rkhunter.rc > 1 
+  changed_when: whereis_rkhunter.rc != 0 
+  tags:
+      - rkhunter
+
+# Install rkhunter package
+- name: Install rkhunter package
+  apt: pkg={{ item }} install_recommends=yes state=latest update_cache=yes
+  with_items:
+      - rkhunter
+  when: whereis_rkhunter.rc == 1
+  tags:
+      - rkhunter
+
+# Add Debian and Ubuntu custom configuration to /etc/rkhunter.conf
+- name: Configure Rkhunter
+  lineinfile: dest=/etc/rkhunter.conf regexp={{ item.regexp }} line={{ item.line }} backup=yes
+  with_items:
+      - { regexp: ALLOWHIDDENFILE=/dev/.initramfs, line: ALLOWHIDDENFILE=/dev/.initramfs }
+      - { regexp: ALLOWHIDDENDIR=/dev/.udev, line: ALLOWHIDDENDIR=/dev/.udev }
+      - { regexp: SCRIPTWHITELIST=/usr/bin/unhide.rb, line: SCRIPTWHITELIST=/usr/bin/unhide.rb }
+      - { regexp: ALLOWDEVFILE=/dev/.udev/rules.d/root.rules, line: ALLOWDEVFILE=/dev/.udev/rules.d/root.rules }
+  when: whereis_rkhunter.rc == 1
+  tags:
+      - rkhunter
+
+# Run property updates, for more information read "man rkhunter"
+- name: Propupdate Rkhunter
+  shell: /usr/bin/rkhunter --propupd
+  when: whereis_rkhunter.rc == 1
+  tags:
+      - rkhunter
+
+# Run rkhunter database update. Rkhunter return code^
+# 0 - if nothing was updated
+# 1 - update error
+# 2 - database has updates and was seccesfully updated
+# We can skip failed update, because rkhunter will be updated next time via cron job
+- name: Update Rkhunter
+  command: /usr/bin/rkhunter --update
+  register: rkhunter_update
+  when: whereis_rkhunter.rc == 1
+  failed_when: rkhunter_update.rc > 2
+  tags:
+      - rkhunter
+
+# Initial system check for rootkits  
+- name: Check system for rootkits
+  shell: /usr/bin/rkhunter -c --sk
+  async: 300
+  poll: 30
+  when: whereis_rkhunter.rc == 1
+  tags:
+      - rkhunter

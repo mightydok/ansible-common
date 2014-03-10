@@ -1,0 +1,43 @@
+---
+# Common tasks for all my servers.
+# We will configure those services:
+# * SSH
+# And Install some default packages.
+#
+
+- name: Install some default packages
+  apt: pkg={{ item }} install_recommends=yes state=latest cache_valid_time=3600 update_cache=yes
+  with_items:
+      - screen
+      - sudo
+      - arping
+      - tshark
+      - mc
+      - unzip
+      - vim
+      - logwatch
+      - logrotate
+      - bzip2
+      - fail2ban
+      - iptables
+      - iptables-persistent
+      - p7zip
+      - p7zip-full
+      - p7zip-rar
+      - pwgen
+  tags:
+      - common
+
+- name: Set Vim as default editor
+  file: src=/usr/bin/vim.basic dest=/etc/alternatives/editor owner=root group=root force=yes state=link
+  tags:
+      - common
+
+- name: Disable SSHD root access to server
+  lineinfile: dest=/etc/ssh/sshd_config regexp="PermitRootLogin yes" line="PermitRootLogin no" backrefs=yes
+  notify: restart ssh
+  tags:
+      - common
+
+# Include rkhunter tasks
+- include: rkhunter.yml
