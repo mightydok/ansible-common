@@ -39,11 +39,11 @@
   tags:
       - common
 
-- name: Place .screenrc file to root and remote_user home directory
-  copy: src=.screenrc dest={{ item.folder }}/.screenrc backup=yes owner={{ item.ug }} group={{ item.ug }} mode=0644
-  with_items:
-      - { folder: "~", ug: "root" }
-      - { folder: "/home/{{ ansible_env.SUDO_USER }}", ug: "{{ ansible_env.SUDO_USER }}" }
+- name: Place my templates file to root and remote_user home directory
+  template: src={{ item[0] }}.j2 dest=~{{ item[1] }}/{{ item[0] }} owner={{ item[1] }} group={{ item[1] }} mode=0644
+  with_nested:
+      - [ '.gitconfig', '.screenrc' ]
+      - [ 'root', '{{ ansible_env.SUDO_USER }}' ]
   tags:
       - common
 
